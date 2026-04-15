@@ -39,10 +39,8 @@ export default function CertificatesPage() {
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto">
                     <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex-1 sm:flex-none flex items-center gap-2">
-                          <Eye className="w-4 h-4" /> View
-                        </Button>
+                      <DialogTrigger render={<Button variant="outline" className="flex-1 sm:flex-none flex items-center gap-2" />}>
+                        <Eye className="w-4 h-4" /> View
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
