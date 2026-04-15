@@ -1,0 +1,113 @@
+"use client";
+
+import { DashboardLayout } from "@/components/shared/DashboardLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MOCK_EVENTS, MOCK_VOLUNTEER_APPLICATIONS } from "@/lib/mock-data";
+import { MapPin, Calendar as CalendarIcon, CheckCircle2, Clock } from "lucide-react";
+
+export default function VolunteerDashboard() {
+  // Current user mock ID is "u2"
+  const myApplications = MOCK_VOLUNTEER_APPLICATIONS.filter(a => a.volunteerId === "u2");
+  const myAppliedEventIds = myApplications.map(a => a.eventId);
+  
+  const availableEvents = MOCK_EVENTS.filter(e => 
+    e.status !== "completed" && 
+    !myAppliedEventIds.includes(e.id) &&
+    e.volunteerCount < (e.maxVolunteers || 999)
+  );
+
+  return (
+    <DashboardLayout role="volunteer">
+      <div className="max-w-4xl mx-auto space-y-12">
+        <section>
+          <div>
+            <h1 className="font-heading text-4xl font-bold tracking-tight mb-2">My Applications</h1>
+            <p className="text-muted-foreground mb-6">Track your volunteering status across HopeNGO events.</p>
+          </div>
+          
+          <div className="space-y-4">
+            {myApplications.length === 0 ? (
+              <p className="text-muted-foreground italic">You haven't applied to any events yet.</p>
+            ) : (
+              myApplications.map((app) => {
+                const event = MOCK_EVENTS.find(e => e.id === app.eventId);
+                if (!event) return null;
+                const isApproved = app.status === "approved";
+
+                return (
+                  <Card key={app.id} className="overflow-hidden border-border/40 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+                    <div className="flex flex-col sm:flex-row">
+                      <div className="w-full sm:w-48 h-32 sm:h-auto bg-muted relative shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={event.bannerImageUrl} alt="" className="object-cover w-full h-full" />
+                      </div>
+                      <div className="p-6 flex-1 flex flex-col justify-center">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-heading text-xl font-bold">{event.title}</h3>
+                          {isApproved ? (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-0 flex items-center gap-1.5 px-2.5 py-0.5 shadow-none rounded-md">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Approved
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50 flex items-center gap-1.5 px-2.5 py-0.5 rounded-md">
+                              <Clock className="w-3.5 h-3.5" /> Pending Review
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                          <span className="flex items-center gap-1.5">
+                            <CalendarIcon className="w-4 h-4" /> 
+                            {new Date(event.date).toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1.5 hidden sm:flex">
+                            <MapPin className="w-4 h-4" /> 
+                            {event.location}
+                          </span>
+                        </div>
+                        {isApproved && (
+                          <div className="p-3 bg-surface-container-low rounded-md text-sm border border-border/20">
+                            <strong>Coordinator Note:</strong> Please arrive 30 mins early at the main entrance. Contact David for queries.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div>
+            <h2 className="font-heading text-3xl font-bold tracking-tight mb-2">Available Events</h2>
+            <p className="text-muted-foreground mb-6">Discover active drives looking for volunteers.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {availableEvents.map(event => (
+              <Card key={event.id} className="flex flex-col border-border/40 overflow-hidden shadow-sm">
+                <div className="h-40 bg-muted relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={event.bannerImageUrl} alt="" className="object-cover w-full h-full" />
+                </div>
+                <CardContent className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-heading text-lg font-bold mb-2">{event.title}</h3>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                    <span className="flex items-center gap-1">
+                      <CalendarIcon className="w-3.5 h-3.5" /> {new Date(event.date).toLocaleDateString()}
+                    </span>
+                    <span>{event.maxVolunteers ? event.maxVolunteers - event.volunteerCount : 'Unlimited'} Spots Left</span>
+                  </div>
+                  <p className="text-muted-foreground text-sm flex-1 mb-4 line-clamp-2">{event.description}</p>
+                  <Button className="w-full mt-auto">Apply to Volunteer</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </div>
+    </DashboardLayout>
+  );
+}
