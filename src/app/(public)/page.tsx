@@ -69,7 +69,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {featuredEvents.map((event) => (
-              <div key={event.id} className="group relative rounded-2xl overflow-hidden bg-card border border-border/40 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
+              <Link key={event.id} href={`/events/${event.id}`} className="group relative rounded-2xl overflow-hidden bg-card border border-border/40 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 block">
                 <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={event.bannerImageUrl} alt={event.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
@@ -81,10 +81,10 @@ export default function LandingPage() {
                     </span>
                     <span className="text-xs text-muted-foreground">{event.location}</span>
                   </div>
-                  <h3 className="font-heading text-2xl font-bold mb-3">{event.title}</h3>
+                  <h3 className="font-heading text-2xl font-bold mb-3 group-hover:text-primary transition-colors">{event.title}</h3>
                   <p className="text-muted-foreground text-sm line-clamp-2">{event.description}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

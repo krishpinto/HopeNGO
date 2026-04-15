@@ -1,22 +1,34 @@
 "use client";
 
+import Link from "next/link";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MOCK_EVENTS, MOCK_VOLUNTEER_APPLICATIONS } from "@/lib/mock-data";
 import { MapPin, Calendar as CalendarIcon, CheckCircle2, Clock } from "lucide-react";
+import { useAppStore } from "@/lib/store";
+import { useEffect, useState } from "react";
 
 export default function VolunteerDashboard() {
+  const { appliedEvents } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Current user mock ID is "u2"
-  const myApplications = MOCK_VOLUNTEER_APPLICATIONS.filter(a => a.volunteerId === "u2");
-  const myAppliedEventIds = myApplications.map(a => a.eventId);
+  const baselineApplications = MOCK_VOLUNTEER_APPLICATIONS.filter(a => a.volunteerId === "u2").map(a => a.eventId);
+  const myAppliedEventIds = Array.from(new Set([...baselineApplications, ...appliedEvents]));
   
-  const availableEvents = MOCK_EVENTS.filter(e => 
+  const availableEvents = mounted ? MOCK_EVENTS.filter(e => 
     e.status !== "completed" && 
     !myAppliedEventIds.includes(e.id) &&
     e.volunteerCount < (e.maxVolunteers || 999)
-  );
+  ) : [];
+
+  const myEventDetails = myAppliedEventIds.map(id => MOCK_EVENTS.find(e => e.id === id)).filter(Boolean);
 
   return (
     <DashboardLayout role="volunteer">
@@ -28,16 +40,17 @@ export default function VolunteerDashboard() {
           </div>
           
           <div className="space-y-4">
-            {myApplications.length === 0 ? (
+            {!mounted ? null : myEventDetails.length === 0 ? (
               <p className="text-muted-foreground italic">You haven't applied to any events yet.</p>
             ) : (
-              myApplications.map((app) => {
-                const event = MOCK_EVENTS.find(e => e.id === app.eventId);
+              myEventDetails.map((event) => {
                 if (!event) return null;
-                const isApproved = app.status === "approved";
+                // If it's a built-in mock app it might be approved, otherwise pending
+                const builtinApp = MOCK_VOLUNTEER_APPLICATIONS.find(a => a.eventId === event.id && a.volunteerId === "u2");
+                const isApproved = builtinApp?.status === "approved" || event.id === "e3" || event.id === "e12"; // mock logic
 
                 return (
-                  <Card key={app.id} className="overflow-hidden border-border/40 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+                  <Card key={event.id} className="overflow-hidden border-border/40 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
                     <div className="flex flex-col sm:flex-row">
                       <div className="w-full sm:w-48 h-32 sm:h-auto bg-muted relative shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -101,7 +114,9 @@ export default function VolunteerDashboard() {
                     <span>{event.maxVolunteers ? event.maxVolunteers - event.volunteerCount : 'Unlimited'} Spots Left</span>
                   </div>
                   <p className="text-muted-foreground text-sm flex-1 mb-4 line-clamp-2">{event.description}</p>
-                  <Button className="w-full mt-auto">Apply to Volunteer</Button>
+                  <Link href={`/events/${event.id}`} className={buttonVariants({ className: "w-full mt-auto text-center" })}>
+                    View Details & Apply
+                  </Link>
                 </CardContent>
               </Card>
             ))}

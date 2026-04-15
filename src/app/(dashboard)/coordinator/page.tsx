@@ -63,7 +63,7 @@ export default function CoordinatorDashboard() {
                           </h4>
                           <p className="text-muted-foreground leading-relaxed">"{event.coordinatorReport.notes}"</p>
                           <div className="mt-3 flex gap-2">
-                            {event.coordinatorReport.attendanceImages.map((img, i) => (
+                            {event.coordinatorReport.attendanceImages.map((img: string, i: number) => (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img key={i} src={img} alt="Attendance proof" className="w-16 h-16 object-cover rounded-md border border-border/50 shadow-sm" />
                             ))}

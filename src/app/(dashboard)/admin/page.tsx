@@ -96,6 +96,52 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          <Card className="shadow-sm border-border/40">
+            <CardHeader className="bg-surface-container-low border-b border-border/20">
+              <CardTitle className="font-heading text-lg">Recent Drives</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/20">
+                {MOCK_EVENTS.slice(0, 5).map(event => (
+                  <div key={event.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                    <div>
+                      <p className="font-bold text-sm">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(event.date).toLocaleDateString()} • {event.location}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{event.volunteerCount} Vols</p>
+                      <p className={`text-xs uppercase font-bold tracking-wider ${event.status === 'completed' ? 'text-green-600' : 'text-primary'}`}>{event.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/40">
+            <CardHeader className="bg-surface-container-low border-b border-border/20">
+              <CardTitle className="font-heading text-lg">Recent Donations</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/20">
+                {MOCK_DONATIONS.slice(0, 5).map(donation => (
+                  <div key={donation.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                    <div>
+                      <p className="font-bold text-sm">{donation.donorName}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(donation.date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-primary">${donation.amount.toLocaleString()}</p>
+                      <p className="text-xs uppercase font-bold tracking-wider text-green-600">{donation.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

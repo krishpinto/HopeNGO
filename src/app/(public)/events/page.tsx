@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { MOCK_EVENTS } from "@/lib/mock-data";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Calendar, MapPin, Users } from "lucide-react";
 
 export default function EventsPage() {
@@ -41,24 +42,23 @@ export default function EventsPage() {
                 </div>
                 
                 <h2 className="font-heading text-3xl font-bold mb-4">{event.title}</h2>
-                <p className="text-muted-foreground leading-relaxed mb-8">{event.description}</p>
+                <p className="text-muted-foreground leading-relaxed mb-8 line-clamp-3">{event.description}</p>
                 
                 <div className="grid grid-cols-2 gap-y-4 text-sm font-medium text-foreground mb-8">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="w-4 h-4" /> <span>{event.location}</span>
+                    <MapPin className="w-4 h-4 shrink-0" /> <span className="line-clamp-1">{event.location}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="w-4 h-4" /> 
-                    <span>{event.participantCount} / {event.maxParticipants} Registered</span>
+                    <Users className="w-4 h-4 shrink-0" /> 
+                    <span>{event.volunteerCount} / {event.maxVolunteers || 'Unlimited'} Vols</span>
                   </div>
                 </div>
 
-                {!isCompleted && (
-                  <div className="flex flex-wrap gap-4 mt-auto">
-                    <Button size="lg" className="rounded-full tracking-wide">Register to Attend</Button>
-                    <Button size="lg" variant="outline" className="rounded-full tracking-wide">Apply to Volunteer</Button>
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-4 mt-auto">
+                  <Link href={`/events/${event.id}`} className={buttonVariants({ size: "lg", className: "rounded-full tracking-wide" })}>
+                    View Details
+                  </Link>
+                </div>
               </div>
             </div>
           )
