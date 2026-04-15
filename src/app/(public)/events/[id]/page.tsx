@@ -3,7 +3,6 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PublicNav } from "@/components/shared/PublicNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_EVENTS } from "@/lib/mock-data";
@@ -32,8 +31,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <PublicNav />
+    <div className="flex flex-col min-h-screen -mt-16">
       {/* Visual Header */}
       <div className="relative h-[400px] md:h-[500px] w-full bg-surface-container-low">
         {/* eslint-disable-next-line @next/next/no-img-element */}
