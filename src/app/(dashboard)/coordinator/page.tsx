@@ -2,8 +2,9 @@
 
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { MOCK_EVENTS } from "@/lib/mock-data";
+import { buttonVariants } from "@/components/ui/button";
+import Link from "next/link";
 import { FileText, MapPin, Users, CheckCircle2 } from "lucide-react";
 
 export default function CoordinatorDashboard() {
@@ -77,13 +78,13 @@ export default function CoordinatorDashboard() {
                     </div>
                     
                     {!isCompleted && (
-                      <div className="mt-6 pt-6 border-t border-border/20 flex gap-4 items-center">
-                        <Button className="font-medium h-10 px-6 bg-primary text-primary-foreground">
+                      <div className="mt-6 pt-6 border-t border-border/20 flex flex-wrap gap-4 items-center">
+                        <Link href={`/coordinator/events/${event.id}/report`} className={buttonVariants({ className: "font-medium h-10 px-6 shadow-sm" })}>
                           Submit Event Report
-                        </Button>
-                        <Button variant="outline" className="font-medium h-10">
+                        </Link>
+                        <Link href={`/coordinator/events/${event.id}`} className={buttonVariants({ variant: "outline", className: "font-medium h-10 shadow-sm" })}>
                           View Volunteer Roster
-                        </Button>
+                        </Link>
                       </div>
                     )}
                   </div>

@@ -15,7 +15,6 @@ const ADMIN_LINKS: SidebarItem[] = [
   { icon: Home, label: "Overview", href: "/admin" },
   { icon: Calendar, label: "Events", href: "/admin/events" },
   { icon: Users, label: "Volunteers", href: "/admin/volunteers" },
-  { icon: Briefcase, label: "Assignments", href: "/admin/assignments" },
   { icon: Heart, label: "Donations", href: "/admin/donations" },
 ];
 
