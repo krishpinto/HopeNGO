@@ -21,15 +21,15 @@ export default function CoordinatorLayout() {
       />
       <Tabs.Screen 
         name="event/[id]" 
-        options={{ href: null, title: 'Event Details', headerBackTitle: 'Back' }} 
+        options={{ href: null, title: 'Event Details' }} 
       />
       <Tabs.Screen 
         name="event/[id]/roster" 
-        options={{ href: null, title: 'Volunteer Roster', headerBackTitle: 'Back' }} 
+        options={{ href: null, title: 'Volunteer Roster' }} 
       />
       <Tabs.Screen 
         name="event/[id]/report" 
-        options={{ href: null, title: 'Execution Report', headerBackTitle: 'Back' }} 
+        options={{ href: null, title: 'Execution Report' }} 
       />
     </Tabs>
   );

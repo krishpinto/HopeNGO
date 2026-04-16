@@ -1,19 +1,50 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useAppStore } from '../../src/lib/store';
-import { MOCK_EVENTS, MOCK_CERTIFICATES } from '../../src/lib/mock-data';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
+import { getEvents, getVolunteerCertificates } from '../../lib/db-service';
+import { useEffect, useState } from 'react';
+import { auth } from '../../lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function VolunteerDashboard() {
   const appliedEventsIds = useAppStore(state => state.appliedEvents);
-  const myApplications = MOCK_EVENTS.filter(e => appliedEventsIds.includes(e.id));
   const router = useRouter();
+  
+  const [events, setEvents] = useState<any[]>([]);
+  const [certs, setCerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      // Auto-login volunteer user for MVP demo
+      if (!auth?.currentUser) {
+        try { await signInWithEmailAndPassword(auth, 'john@example.com', 'password123'); } catch(e) {}
+      }
+      
+      const evts = await getEvents();
+      setEvents(evts);
+      
+      if (auth?.currentUser) {
+         const userCerts = await getVolunteerCertificates(auth.currentUser.uid);
+         setCerts(userCerts);
+      }
+      setLoading(false);
+    }
+    init();
+  }, []);
+
+  const myApplications = events.filter(e => appliedEventsIds.includes(e.id));
+
+  if (loading) {
+    return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator size="large" color="#0f5238"/></View>;
+  }
 
   return (
     <ScrollView className="flex-1 bg-background p-6">
-      <View className="mb-8">
+      <View className="mb-8 mt-10">
         <Text className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Georgia' }}>Welcome back,</Text>
-        <Text className="text-3xl font-bold text-primary" style={{ fontFamily: 'Georgia' }}>User!</Text>
+        <Text className="text-3xl font-bold text-primary" style={{ fontFamily: 'Georgia' }}>Volunteer!</Text>
         <Text className="text-muted-foreground mt-2">Ready to make an impact today?</Text>
       </View>
 
@@ -23,7 +54,7 @@ export default function VolunteerDashboard() {
           <Text className="text-xs uppercase font-bold text-muted-foreground mt-1">Active Apps</Text>
         </View>
         <View className="flex-1 bg-surface p-4 rounded-xl border border-border shadow-sm">
-          <Text className="text-3xl font-bold text-primary">{MOCK_CERTIFICATES.length}</Text>
+          <Text className="text-3xl font-bold text-primary">{certs.length}</Text>
           <Text className="text-xs uppercase font-bold text-muted-foreground mt-1">Certificates</Text>
         </View>
       </View>
@@ -51,6 +82,10 @@ export default function VolunteerDashboard() {
           </View>
         </TouchableOpacity>
       ))}
+
+      {myApplications.length === 0 && (
+         <Text className="text-muted-foreground italic mb-4">No active applications currently.</Text>
+      )}
 
       <TouchableOpacity 
         className="mt-4 bg-primary py-4 rounded-xl items-center shadow-sm"

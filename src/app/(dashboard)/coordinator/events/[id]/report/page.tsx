@@ -1,9 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
-import { MOCK_EVENTS } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,23 +10,44 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, UploadCloud, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
+import { getEventById, submitReport } from "@/lib/db-service";
 
 export default function CoordinatorSubmitReportPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const event = MOCK_EVENTS.find(e => e.id === resolvedParams.id && e.coordinatorId === "u4");
   
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  
+  const [activities, setActivities] = useState("");
+  const [actualVols, setActualVols] = useState("");
+  const [challenges, setChallenges] = useState("");
 
-  if (!event) {
-    notFound();
-  }
+  useEffect(() => {
+    getEventById(resolvedParams.id).then(e => {
+        setEvent(e);
+        if (e) setActualVols(e.volunteerCount.toString());
+        setLoading(false);
+    });
+  }, [resolvedParams.id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (loading) return <DashboardLayout role="coordinator"><p>Loading...</p></DashboardLayout>;
+  if (!event) return notFound();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth.currentUser) return alert("Must be logged in");
+
+    await submitReport(event.id, auth.currentUser.uid, {
+        notes: activities,
+        challenges,
+        actualVols: Number(actualVols),
+        attendanceImages: ['https://images.unsplash.com/photo-1555529733-0e67056058e1?auto=format&fit=crop&q=80&w=1000'] // mock image 
+    });
+
     setSubmitted(true);
-    // In a real app we'd mutate state here. 
-    // We will just show a success state and mock redirect back.
     setTimeout(() => {
         router.push('/coordinator');
     }, 2000);
@@ -61,17 +81,17 @@ export default function CoordinatorSubmitReportPage({ params }: { params: Promis
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="activities" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Activities Conducted</Label>
-                  <Textarea id="activities" placeholder="Describe the step-by-step execution of the event..." className="min-h-32 bg-surface-container-lowest" required />
+                  <Textarea id="activities" value={activities} onChange={e=>setActivities(e.target.value)} placeholder="Describe the step-by-step execution of the event..." className="min-h-32 bg-surface-container-lowest" required />
                 </div>
                 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="actualVols" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Actual Volunteers Present</Label>
-                    <Input id="actualVols" type="number" defaultValue={event.volunteerCount} className="bg-surface-container-lowest" required />
+                    <Input id="actualVols" type="number" value={actualVols} onChange={e=>setActualVols(e.target.value)} className="bg-surface-container-lowest" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="challenges" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Challenges Faced (Optional)</Label>
-                    <Input id="challenges" placeholder="e.g. Weather, logistics..." className="bg-surface-container-lowest" />
+                    <Input id="challenges" placeholder="e.g. Weather, logistics..." value={challenges} onChange={e=>setChallenges(e.target.value)} className="bg-surface-container-lowest" />
                   </div>
                 </div>
               </CardContent>

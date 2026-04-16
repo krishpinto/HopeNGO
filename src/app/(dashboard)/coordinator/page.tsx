@@ -1,15 +1,44 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { MOCK_EVENTS } from "@/lib/mock-data";
 import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, MapPin, Users, CheckCircle2 } from "lucide-react";
+import { FileText, MapPin, Users, CheckCircle2, Loader2 } from "lucide-react";
+import { getEventsByCoordinator, getReport } from "@/lib/db-service";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function CoordinatorDashboard() {
-  // Current user mock ID is "u4"
-  const myEvents = MOCK_EVENTS.filter(e => e.coordinatorId === "u4");
+  const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [reports, setReports] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const events = await getEventsByCoordinator(user.uid);
+        setMyEvents(events);
+        
+        // Fetch reports for completed events
+        const repMap: Record<string, any> = {};
+        for (const e of events) {
+          if (e.status === "completed") {
+             const r = await getReport(e.id);
+             if (r) repMap[e.id] = r;
+          }
+        }
+        setReports(repMap);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+     return <DashboardLayout role="coordinator"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
+  }
 
   return (
     <DashboardLayout role="coordinator">
@@ -21,7 +50,8 @@ export default function CoordinatorDashboard() {
 
         <div className="grid gap-6">
           {myEvents.map(event => {
-            const isCompleted = event.status === "completed" || !!event.coordinatorReport;
+            const hasReport = !!reports[event.id];
+            const isCompleted = event.status === "completed" || hasReport;
 
             return (
               <Card key={event.id} className={`overflow-hidden border-border/40 shadow-sm ${isCompleted ? 'bg-surface-container-low' : 'bg-card'}`}>
@@ -57,14 +87,14 @@ export default function CoordinatorDashboard() {
                         </span>
                       </div>
 
-                      {isCompleted && event.coordinatorReport ? (
+                      {hasReport ? (
                         <div className="bg-background rounded-lg p-4 border border-border/40 text-sm mt-4">
                           <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
                             <FileText className="w-4 h-4 text-primary" /> Submitted Notes
                           </h4>
-                          <p className="text-muted-foreground leading-relaxed">"{event.coordinatorReport.notes}"</p>
-                          <div className="mt-3 flex gap-2">
-                            {event.coordinatorReport.attendanceImages.map((img: string, i: number) => (
+                          <p className="text-muted-foreground leading-relaxed">"{reports[event.id].notes}"</p>
+                          <div className="mt-3 flex gap-2 overflow-x-auto">
+                            {reports[event.id].attendanceImages?.map((img: string, i: number) => (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img key={i} src={img} alt="Attendance proof" className="w-16 h-16 object-cover rounded-md border border-border/50 shadow-sm" />
                             ))}

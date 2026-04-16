@@ -1,47 +1,66 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
-import { MOCK_EVENTS, MOCK_USERS, MOCK_VOLUNTEER_APPLICATIONS } from "@/lib/mock-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, CheckSquare, FileText } from "lucide-react";
+import { ChevronLeft, CheckSquare, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { getEventById, getEventApplications, getUser, getReport } from "@/lib/db-service";
 
 export default function CoordinatorEventRosterPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const event = MOCK_EVENTS.find(e => e.id === resolvedParams.id && e.coordinatorId === "u4");
+  const [event, setEvent] = useState<any>(null);
+  const [roster, setRoster] = useState<any[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
   
-  if (!event) {
-    notFound();
+  useEffect(() => {
+    async function init() {
+      const e = await getEventById(resolvedParams.id);
+      if (!e) return setLoading(false);
+      
+      setEvent(e);
+      let completed = e.status === "completed";
+      if (!completed) {
+        const r = await getReport(e.id);
+        if (r) completed = true;
+      }
+      setIsCompleted(completed);
+
+      const apps = await getEventApplications(e.id);
+      const fullRoster = [];
+      for (const a of apps) {
+        const u = await getUser(a.volunteerId);
+        fullRoster.push({ ...a, user: u || { name: 'Unknown', email: 'N/A' } });
+      }
+
+      // Add dummy padding if needed
+      if (fullRoster.length < 5) {
+         for (let i = 0; i < 6; i++) {
+             fullRoster.push({
+                 id: `mock-roster-${i}`,
+                 eventId: e.id,
+                 volunteerId: `mock-${i}`,
+                 status: "approved",
+                 user: { id: `mock-${i}`, name: `Local Volunteer ${i+1}`, email: `vol${i}@example.com`, role: "volunteer", isApproved: true }
+             });
+         }
+      }
+      setRoster(fullRoster);
+      setLoading(false);
+    }
+    init();
+  }, [resolvedParams.id]);
+
+  if (loading) {
+     return <DashboardLayout role="coordinator"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
   }
 
-  const isCompleted = event.status === "completed" || !!event.coordinatorReport;
-
-  // Derive mock roster strictly matching this event
-  const applications = MOCK_VOLUNTEER_APPLICATIONS.filter(a => a.eventId === event.id);
-  // Add some fake dummy data so it feels dense if empty
-  const mockRoster = applications.map((app, i) => {
-    const user = MOCK_USERS.find(u => u.id === app.volunteerId) || MOCK_USERS[1];
-    return { ...app, user: user };
-  });
-
-  // Pad the roster if too small to look believable for presentation
-  const extendedRoster = [...mockRoster];
-  if (extendedRoster.length < 5) {
-     for (let i = 0; i < 6; i++) {
-         extendedRoster.push({
-             id: `mock-roster-${i}`,
-             eventId: event.id,
-             volunteerId: `mock-${i}`,
-             status: "approved",
-             user: { id: `mock-${i}`, name: `Local Volunteer ${i+1}`, email: `vol${i}@example.com`, role: "volunteer", isApproved: true }
-         });
-     }
-  }
+  if (!event) return notFound();
 
   return (
     <DashboardLayout role="coordinator">
@@ -75,7 +94,7 @@ export default function CoordinatorEventRosterPage({ params }: { params: Promise
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/20">
-                    {extendedRoster.map(row => (
+                    {roster.map((row: any) => (
                       <tr key={row.id} className="hover:bg-muted/50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-foreground">{row.user.name}</td>
                         <td className="px-6 py-4 text-muted-foreground">{row.user.email}</td>

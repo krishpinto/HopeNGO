@@ -1,15 +1,29 @@
-import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
-import { MOCK_EVENTS } from '../../src/lib/mock-data';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useAppStore } from '../../src/lib/store';
 import { useRouter } from 'expo-router';
 import { MapPin, Calendar } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { getEvents } from '../../lib/db-service';
 
 export default function VolunteerEvents() {
   const router = useRouter();
   const appliedEventsIds = useAppStore(state => state.appliedEvents);
-  
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getEvents().then(e => {
+        setEvents(e);
+        setLoading(false);
+    });
+  }, []);
+
   // Exclude applied events from "Available" feed
-  const availableEvents = MOCK_EVENTS.filter(e => !appliedEventsIds.includes(e.id));
+  const availableEvents = events.filter(e => !appliedEventsIds.includes(e.id) && e.status !== "completed");
+
+  if (loading) {
+    return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator size="large" color="#0f5238"/></View>;
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -17,6 +31,7 @@ export default function VolunteerEvents() {
         data={availableEvents}
         keyExtractor={item => item.id}
         contentContainerStyle={{ padding: 24, gap: 16 }}
+        ListEmptyComponent={() => <Text className="text-center mt-10 text-muted-foreground text-lg">No more events available right now.</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity 
             className="bg-surface rounded-2xl overflow-hidden border border-border shadow-sm mb-2"

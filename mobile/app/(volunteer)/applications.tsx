@@ -1,14 +1,28 @@
-import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
-import { MOCK_EVENTS } from '../../src/lib/mock-data';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useAppStore } from '../../src/lib/store';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { getEvents } from '../../lib/db-service';
 
 export default function VolunteerApplications() {
   const router = useRouter();
   const appliedEventsIds = useAppStore(state => state.appliedEvents);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getEvents().then(e => {
+        setEvents(e);
+        setLoading(false);
+    });
+  }, []);
   
-  const appliedEvents = MOCK_EVENTS.filter(e => appliedEventsIds.includes(e.id));
+  const appliedEvents = events.filter(e => appliedEventsIds.includes(e.id));
+
+  if (loading) {
+    return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator size="large" color="#0f5238"/></View>;
+  }
 
   return (
     <View className="flex-1 bg-background">

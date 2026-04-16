@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { MOCK_EVENTS } from "@/lib/mock-data";
+import { getEvents } from "@/lib/db-service";
 
-export default function LandingPage() {
-  const featuredEvents = MOCK_EVENTS.slice(0, 2);
+export default async function LandingPage() {
+  const allEvents = await getEvents();
+  const featuredEvents = allEvents.slice(0, 2);
 
   return (
     <div className="w-full">

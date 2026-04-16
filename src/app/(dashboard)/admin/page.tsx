@@ -1,13 +1,44 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MOCK_DONATIONS, MOCK_EVENTS, MONTHLY_DONATION_DATA, VOLUNTEER_TRENDS_DATA } from "@/lib/mock-data";
+import { MONTHLY_DONATION_DATA, VOLUNTEER_TRENDS_DATA } from "@/lib/mock-data";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
+import { getEvents, getDonations, getAllUsers } from "@/lib/db-service";
+import { Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const totalDonations = MOCK_DONATIONS.reduce((acc, d) => acc + d.amount, 0);
-  const activeEvents = MOCK_EVENTS.filter(e => e.status !== "completed").length;
+  const [events, setEvents] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const [eData, dData, uData] = await Promise.all([
+        getEvents(),
+        getDonations(),
+        getAllUsers()
+      ]);
+      setEvents(eData);
+      setDonations(dData);
+      setUsers(uData);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return <DashboardLayout role="admin"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
+  }
+
+  const totalDonations = donations.reduce((acc, d) => acc + d.amount, 0);
+  const activeEvents = events.filter(e => e.status !== "completed").length;
+  const volunteers = users.filter((u: any) => u.role === "volunteer");
+
+  // Keep charts static with mock data because real aggregation over time requires complicated firebase query structures out of scope for MVP
+  // But display actual numbers on the cards and recent lists
 
   return (
     <DashboardLayout role="admin">
@@ -41,8 +72,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Volunteers</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold font-heading text-primary">500+</div>
-              <p className="text-xs text-muted-foreground mt-1">20 pending approval</p>
+              <div className="text-3xl font-bold font-heading text-primary">{volunteers.length}+</div>
+              <p className="text-xs text-muted-foreground mt-1">Ready to serve</p>
             </CardContent>
           </Card>
           <Card className="shadow-sm">
@@ -50,8 +81,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Certificates</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold font-heading text-primary">1,250</div>
-              <p className="text-xs text-muted-foreground mt-1">Issued year to date</p>
+              <div className="text-3xl font-bold font-heading text-primary">Live</div>
+              <p className="text-xs text-muted-foreground mt-1">Issued per user automatically</p>
             </CardContent>
           </Card>
         </div>
@@ -104,7 +135,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/20">
-                {MOCK_EVENTS.slice(0, 5).map(event => (
+                {events.slice(0, 5).map(event => (
                   <div key={event.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     <div>
                       <p className="font-bold text-sm">{event.title}</p>
@@ -126,11 +157,11 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/20">
-                {MOCK_DONATIONS.slice(0, 5).map(donation => (
+                {donations.slice(0, 5).map(donation => (
                   <div key={donation.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     <div>
                       <p className="font-bold text-sm">{donation.donorName}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(donation.date).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(donation.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-primary">${donation.amount.toLocaleString()}</p>

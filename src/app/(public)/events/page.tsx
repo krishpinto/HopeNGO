@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { MOCK_EVENTS } from "@/lib/mock-data";
+import { getEvents } from "@/lib/db-service";
 import { buttonVariants } from "@/components/ui/button";
 import { Calendar, MapPin, Users } from "lucide-react";
 
-export default function EventsPage() {
-  const events = MOCK_EVENTS;
+export default async function EventsPage() {
+  const events = await getEvents();
 
   return (
     <div className="bg-surface min-h-[calc(100vh-64px)] pb-24">

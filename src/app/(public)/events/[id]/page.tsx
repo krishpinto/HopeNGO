@@ -2,32 +2,59 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_EVENTS } from "@/lib/mock-data";
+import { getEventById, createApplication, getReport } from "@/lib/db-service";
+import { EventData } from "@/lib/mock-data"; 
 import { useAppStore } from "@/lib/store";
-import { Calendar, MapPin, Users, Info, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { Calendar, MapPin, Users, Info, ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { auth } from "@/lib/firebase"; // used for volunteerId
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const event = MOCK_EVENTS.find(e => e.id === resolvedParams.id);
+  const [event, setEvent] = useState<EventData | null>(null);
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { hasApplied, applyToEvent } = useAppStore();
-  const [mounted, setMounted] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    async function load() {
+      const e = await getEventById(resolvedParams.id);
+      if (e) {
+        setEvent(e);
+        if (e.status === "completed") {
+            const r = await getReport(e.id);
+            setReport(r);
+        }
+      }
+      setLoading(false);
+    }
+    load();
+  }, [resolvedParams.id]);
   
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary"/></div>;
+  }
+
   if (!event) {
-    notFound();
+    return <div className="h-screen flex items-center justify-center text-xl">Event not found</div>;
   }
 
   const isCompleted = event.status === "completed";
-  const applied = hasApplied(event.id);
+  const applied = hasApplied(event.id); // Keeping store for local optimistic UI, though we write to db
 
-  const handleApply = () => {
-    applyToEvent(event.id);
+  const handleApply = async () => {
+    if (!auth.currentUser) return alert("Please log in first!");
+    setApplying(true);
+    try {
+      await createApplication(event.id, auth.currentUser.uid);
+      applyToEvent(event.id);
+    } catch(err) {
+      alert("Failed to apply");
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -47,7 +74,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground border-0 rounded-sm uppercase tracking-widest text-[10px]">
                 {isCompleted ? "Completed" : "Upcoming"}
               </Badge>
-              {event.tags.map(tag => (
+              {event.tags?.map(tag => (
                 <Badge key={tag} variant="outline" className="text-white border-white/30 bg-black/20 backdrop-blur-md rounded-sm">
                   {tag}
                 </Badge>
@@ -78,19 +105,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </div>
             </section>
 
-            {isCompleted && event.coordinatorReport && (
+            {isCompleted && report && (
               <section className="bg-surface-container-low border border-border/40 rounded-2xl p-8">
                 <h3 className="font-heading text-2xl font-bold mb-4 flex items-center gap-2">
                   <CheckCircle2 className="w-6 h-6 text-primary" /> Post-Event Report
                 </h3>
                 <p className="text-muted-foreground mb-6 italic">
-                  "{event.coordinatorReport.notes}"
+                  "{report.notes}"
                 </p>
-                {event.coordinatorReport.attendanceImages && (
+                {report.attendanceImages && (
                   <div>
                     <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 block">Attendance Verified</span>
                     <div className="flex gap-4">
-                      {event.coordinatorReport.attendanceImages.map((img: string, i: number) => (
+                      {report.attendanceImages.map((img: string, i: number) => (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img key={i} src={img} alt="Attendance" className="w-24 h-24 object-cover rounded-lg border border-border/50 shadow-sm" />
                       ))}
@@ -151,7 +178,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              {!isCompleted && mounted && (
+              {!isCompleted && (
                 <div className="mt-8 pt-8 border-t border-border/40 space-y-4">
                   {applied ? (
                     <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-center gap-3">
@@ -159,8 +186,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                       <div className="text-sm font-medium">You have volunteered for this event. Check your dashboard.</div>
                     </div>
                   ) : (
-                    <Button size="lg" className="w-full h-14 text-base font-bold shadow-md" onClick={handleApply}>
-                      Volunteer for this Event
+                    <Button size="lg" className="w-full h-14 text-base font-bold shadow-md" onClick={handleApply} disabled={applying}>
+                      {applying ? "Applying..." : "Volunteer for this Event"}
                     </Button>
                   )}
                   

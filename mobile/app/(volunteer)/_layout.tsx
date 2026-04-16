@@ -32,7 +32,7 @@ export default function VolunteerLayout() {
         options={{ title: 'Profile', tabBarIcon: ({ color }) => <User color={color} size={24} /> }} 
       />
       {/* Hidden Screens */}
-      <Tabs.Screen name="event/[id]" options={{ href: null, title: 'Event Details', headerBackTitle: 'Back' }} />
+      <Tabs.Screen name="event/[id]" options={{ title: 'Event Details', href: null }} />
     </Tabs>
   );
 }

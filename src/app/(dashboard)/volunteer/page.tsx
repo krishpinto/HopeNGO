@@ -5,30 +5,50 @@ import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { MOCK_EVENTS, MOCK_VOLUNTEER_APPLICATIONS } from "@/lib/mock-data";
-import { MapPin, Calendar as CalendarIcon, CheckCircle2, Clock } from "lucide-react";
+import { getEvents, getVolunteerApplications } from "@/lib/db-service";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { MapPin, Calendar as CalendarIcon, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 
 export default function VolunteerDashboard() {
   const { appliedEvents } = useAppStore();
   const [mounted, setMounted] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      const allEvents = await getEvents();
+      setEvents(allEvents);
+      
+      if (user) {
+        const apps = await getVolunteerApplications(user.uid);
+        setApplications(apps);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Current user mock ID is "u2"
-  const baselineApplications = MOCK_VOLUNTEER_APPLICATIONS.filter(a => a.volunteerId === "u2").map(a => a.eventId);
+  if (loading) {
+     return <DashboardLayout role="volunteer"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
+  }
+
+  const baselineApplications = applications.map((a: any) => a.eventId);
   const myAppliedEventIds = Array.from(new Set([...baselineApplications, ...appliedEvents]));
   
-  const availableEvents = mounted ? MOCK_EVENTS.filter(e => 
+  const availableEvents = mounted ? events.filter((e: any) => 
     e.status !== "completed" && 
     !myAppliedEventIds.includes(e.id) &&
     e.volunteerCount < (e.maxVolunteers || 999)
   ) : [];
 
-  const myEventDetails = myAppliedEventIds.map(id => MOCK_EVENTS.find(e => e.id === id)).filter(Boolean);
+  const myEventDetails = myAppliedEventIds.map(id => events.find((e: any) => e.id === id)).filter(Boolean);
 
   return (
     <DashboardLayout role="volunteer">
@@ -45,9 +65,8 @@ export default function VolunteerDashboard() {
             ) : (
               myEventDetails.map((event) => {
                 if (!event) return null;
-                // If it's a built-in mock app it might be approved, otherwise pending
-                const builtinApp = MOCK_VOLUNTEER_APPLICATIONS.find(a => a.eventId === event.id && a.volunteerId === "u2");
-                const isApproved = builtinApp?.status === "approved" || event.id === "e3" || event.id === "e12"; // mock logic
+                const appRow = applications.find(a => a.eventId === event.id);
+                const isApproved = appRow?.status === "approved";
 
                 return (
                   <Card key={event.id} className="overflow-hidden border-border/40 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
@@ -81,7 +100,7 @@ export default function VolunteerDashboard() {
                         </div>
                         {isApproved && (
                           <div className="p-3 bg-surface-container-low rounded-md text-sm border border-border/20">
-                            <strong>Coordinator Note:</strong> Please arrive 30 mins early at the main entrance. Contact David for queries.
+                            <strong>Coordinator Note:</strong> Please arrive 30 mins early at the main entrance.
                           </div>
                         )}
                       </div>
@@ -99,7 +118,7 @@ export default function VolunteerDashboard() {
             <p className="text-muted-foreground mb-6">Discover active drives looking for volunteers.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
-            {availableEvents.map(event => (
+            {availableEvents.map((event: any) => (
               <Card key={event.id} className="flex flex-col border-border/40 overflow-hidden shadow-sm">
                 <div className="h-40 bg-muted relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
