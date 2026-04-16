@@ -25,13 +25,13 @@ export async function getEventsByCoordinator(coordinatorId: string): Promise<Eve
 export async function getVolunteerApplications(volunteerId: string) {
   const q = query(collection(db, "volunteerApplications"), where("volunteerId", "==", volunteerId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 }
 
 export async function getEventApplications(eventId: string) {
   const q = query(collection(db, "volunteerApplications"), where("eventId", "==", eventId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 }
 
 export async function createApplication(eventId: string, volunteerId: string) {
@@ -51,19 +51,19 @@ export async function updateApplicationStatus(applicationId: string, status: str
 export async function getVolunteerCertificates(volunteerId: string) {
   const q = query(collection(db, "certificates"), where("recipientId", "==", volunteerId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 }
 
 // --- Users ---
 export async function getUser(uid: string) {
   const d = await getDoc(doc(db, "users", uid));
   if (!d.exists()) return null;
-  return { id: d.id, ...d.data() };
+  return { id: d.id, ...d.data() } as any;
 }
 
 export async function getAllUsers() {
   const snapshot = await getDocs(collection(db, "users"));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 }
 
 // --- Donations ---
@@ -77,7 +77,7 @@ export async function submitDonation(data: any) {
 
 export async function getDonations() {
   const snapshot = await getDocs(collection(db, "donations"));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 }
 
 // --- Reports ---
@@ -93,5 +93,5 @@ export async function submitReport(eventId: string, coordinatorId: string, data:
 export async function getReport(eventId: string) {
   const d = await getDoc(doc(db, "eventReports", `report_${eventId}`));
   if (!d.exists()) return null;
-  return { id: d.id, ...d.data() };
+  return { id: d.id, ...d.data() } as any;
 }
